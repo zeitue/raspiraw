@@ -617,9 +617,9 @@ static void callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 		int bpp = encoding_to_bpp(port->format->encoding);
 		int pitch = mmal_encoding_width_to_stride(port->format->encoding, port->format->es->video.width);
 
-		vcos_log_error("First metadata line");
+		vcos_log_error("First metadata line with encode:%#x, bpp=%d", port->format->encoding, bpp);
 		decodemetadataline(buffer->user_data, bpp);
-		vcos_log_error("Second metadata line");
+		vcos_log_error("Second metadata line with pitch=%d", pitch);
 		decodemetadataline(buffer->user_data+pitch, bpp);
 	}
 
@@ -779,19 +779,27 @@ uint32_t order_and_bit_depth_to_encoding(enum bayer_order order, int bit_depth)
 		return 0;
 	}
 
+    uint32_t ret;
 	switch(bit_depth)
 	{
 		case 8:
-			return depth8[order];
+			ret = depth8[order];
+            break;
 		case 10:
-			return depth10[order];
+			ret = depth10[order];
+            break;
 		case 12:
-			return depth12[order];
+			ret = depth12[order];
+            break;
 		case 16:
-			return depth16[order];
+			ret = depth16[order];
+            break;
+        default:
+        	vcos_log_error("%d not one of the handled bit depths", bit_depth);
+            return 0;
 	}
-	vcos_log_error("%d not one of the handled bit depths", bit_depth);
-	return 0;
+    vcos_log_error("order_and_bit_depth_to_encoding(order=%d, bit_depth=%d) return %#x\n", order, bit_depth, ret);
+    return ret;
 }
 
 /**
@@ -2129,6 +2137,7 @@ int main(int argc, char** argv) {
 
 	if (!cfg.no_preview)
 	{
+		printf("Setup preview!\n");
 		MMAL_DISPLAYREGION_T param;
 		param.hdr.id = MMAL_PARAMETER_DISPLAYREGION;
 		param.hdr.size = sizeof(MMAL_DISPLAYREGION_T);
@@ -2223,7 +2232,19 @@ int main(int argc, char** argv) {
 	buffers_to_isp_op(&yuv_cb);
 
 	start_camera_streaming(sensor, sensor_mode);
-
+    
+	encoding = dev.rawcam_output->format->encoding;
+	int stride = mmal_encoding_width_to_stride(encoding, dev.rawcam_output->format->es->video.width);
+    int bpp = encoding_to_bpp(encoding);
+    int pitch = mmal_encoding_width_to_stride(port->format->encoding, port->format->es->video.width);
+    char *pe = (char *)&encoding;
+    char *pex = (char *)&port->format->encoding;
+    vcos_log_error("Sensor width=%d(round to 16), height=%d, dev encoding=%#x(%c%c%c%c), port: encoding=%#x(%c%c%c%c) ref http://www.jvcref.com/files/PI/documentation/html/group___mmal_encodings.html ", 
+            sensor_mode->width, sensor_mode->height, encoding, pe[0], pe[1], pe[2], pe[3],
+            port->format->encoding, pex[0], pex[1], pex[2], pex[3]);
+    vcos_log_error("stride is %d(for dev width=%d), bpp=%d, pitch=%d(for port width=%d(round to 32))\n", 
+            stride, dev.rawcam_output->format->es->video.width, bpp, pitch, port->format->es->video.width);
+    
 	vcos_sleep(cfg.timeout);
 
 	stop_camera_streaming(sensor);

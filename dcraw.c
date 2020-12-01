@@ -2000,11 +2000,16 @@ void CLASS nokia_load_raw()
     dwide = raw_stride;
   data = (uchar *) malloc (dwide*2);
   merror (data, "nokia_load_raw()");
+  fprintf(stderr, "run nokia_load_raw, rev=%d,raw_stride=%d,raw_height=%d,dwide=%d,raw_width=%d\n",rev,raw_stride,raw_height,dwide,raw_width);
   for (row=0; row < raw_height; row++) {
     if (fread (data+dwide, 1, dwide, ifp) < dwide) derror();
-    FORC(dwide) data[c] = data[dwide+(c ^ rev)];
+    //FORC(dwide) data[c] = data[dwide+(c ^ rev)];
+    for (c=0; c < dwide; c++)
+      data[c] = data[dwide+(c ^ rev)];
     for (dp=data, col=0; col < raw_width; dp+=5, col+=4)
-      FORC4 RAW(row,col+c) = (dp[c] << 2) | (dp[4] >> (c << 1) & 3);
+      //FORC4 RAW(row,col+c) = (dp[c] << 2) | (dp[4] >> (c << 1) & 3);
+      for (c=0; c < 4; c++)
+        raw_image[(row)*raw_width+(col+c)] = (dp[c] << 2) | (dp[4] >> (c << 1) & 3);
   }
   free (data);
   maximum = 0x3ff;
@@ -6511,6 +6516,9 @@ void CLASS parse_raspberrypi()
         filters = 0x61616161;
         break;
     }
+    fprintf(stderr, "Found BRCM which name=%s, width=%d, height=%d, padding_right=%d, padding_down=%d, transform=%d, format=%d, bayer_order=%d, bayer_format=%d, filter=%#x\n", 
+                header.name, header.width, header.height, header.padding_right, header.padding_down,
+                header.transform, header.format, header.bayer_order, header.bayer_format, filters);
 
     if (header.format == BRCM_FORMAT_BAYER) {
       switch(header.bayer_format) {
@@ -6531,6 +6539,8 @@ void CLASS parse_raspberrypi()
           raw_height = height = header.height;
           is_raw = 1;
           order = 0x4d4d;
+          fprintf(stderr, "  load_raw use nokia_load_raw and raw_stride is %d, width=%d, height=%d, order=%#x\n", 
+                  raw_stride, width, raw_height, order);          
           break;
         case BRCM_BAYER_RAW12:
           load_raw = &CLASS load_raw12;
@@ -8111,6 +8121,7 @@ void CLASS identify()
   else if (!memcmp (head,"CI",2))
     parse_cine();
   else if (!memcmp (head,"BRCM",4)) {
+    fprintf(stderr, "BRCM\n");
     fseek (ifp, 0, SEEK_SET);
     strcpy (make, "RaspberryPi");
     strcpy (model,"Pi");
@@ -9470,10 +9481,12 @@ int CLASS main (int argc, const char **argv)
   bindtextdomain ("dcraw", LOCALEDIR);
   textdomain ("dcraw");
 #endif
+    printf(_("\nTEST %d\n"), __LINE__);
+    fprintf(stderr, "\nTEST %d\n", __LINE__);
 
   if (argc == 1) {
     printf(_("\nRaw photo decoder \"dcraw\" v%s"), DCRAW_VERSION);
-    printf(_("\nby Dave Coffin, dcoffin a cybercom o net\n"));
+    printf(_("\nbyx Dave Coffin, dcoffin a cybercom o net\n"));
     printf(_("\nUsage:  %s [OPTION]... [FILE]...\n\n"), argv[0]);
     puts(_("-v        Print verbose messages"));
     puts(_("-c        Write image data to standard output"));
