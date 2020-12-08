@@ -317,6 +317,13 @@ typedef struct {
     int processing_yuv_thread_quit;
 } RASPIRAW_ISP_CALLBACK_T;
 
+void gpio_toggle()
+{
+	int pin = 4;
+	digitalWrite (pin, !digitalRead (pin));
+}
+
+
 void update_regs(const struct sensor_def *sensor, struct mode_def *mode, int hflip, int vflip, int exposure, int gain);
 
 static int i2c_rd(int fd, uint8_t i2c_addr, uint16_t reg, uint8_t *values, uint32_t n, const struct sensor_def *sensor)
@@ -1451,12 +1458,6 @@ static void vr_ip_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 
 	mmal_buffer_header_release(buffer);
 	buffers_to_isp_op(dev);
-}
-
-void gpio_toggle()
-{
-	int pin = 4;
-	digitalWrite (pin, !digitalRead (pin));
 }
 
 int main(int argc, char** argv) {
