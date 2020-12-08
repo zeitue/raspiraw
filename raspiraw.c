@@ -35,6 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wiringPi.h>
+
 
 #include <linux/i2c.h>
 #include <linux/i2c-dev.h>
@@ -579,6 +581,7 @@ static void callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 	//vcos_log_error("Buffer %p returned, filled %d, timestamp %llu, flags %04X", buffer, buffer->length, buffer->pts, buffer->flags);
 	if (cfg->capture)
 	{
+		gpio_toggle();
 
 		if (!(buffer->flags&MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) &&
                     (((count++)%cfg->saverate)==0))
@@ -1450,6 +1453,12 @@ static void vr_ip_cb(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 	buffers_to_isp_op(dev);
 }
 
+void gpio_toggle()
+{
+	int pin = 4;
+	digitalWrite (pin, !digitalRead (pin));
+}
+
 int main(int argc, char** argv) {
 	RASPIRAW_PARAMS_T cfg = { 0 };
 	RASPIRAW_CALLBACK_T dev = {
@@ -1487,6 +1496,10 @@ int main(int argc, char** argv) {
 	cfg.fullscreen = 1;
 
 	bcm_host_init();
+
+	wiringPiSetup () ;
+	pinMode (4, OUTPUT) ;
+
 	vcos_log_register("RaspiRaw", VCOS_LOG_CATEGORY);
 
 	if (argc == 1)
