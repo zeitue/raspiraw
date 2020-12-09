@@ -319,8 +319,15 @@ typedef struct {
 
 void gpio_toggle()
 {
+	static bool run = true;
 	int pin = 4;
-	digitalWrite (pin, !digitalRead (pin));
+	if(run) {
+		digitalWrite (pin, !digitalRead (pin));
+		run = false;
+	} else {
+		run = true;
+	}
+	
 }
 
 
