@@ -319,13 +319,13 @@ typedef struct {
 
 void gpio_toggle()
 {
-	static bool run = true;
+	static int run = 1;
 	int pin = 4;
 	if(run) {
 		digitalWrite (pin, !digitalRead (pin));
-		run = false;
+		run = 0;
 	} else {
-		run = true;
+		run = 1;
 	}
 	
 }
