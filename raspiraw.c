@@ -325,7 +325,6 @@ void gpio_toggle()
 	if(run) {
 		digitalWrite (pin, !digitalRead (pin));
 		run = 0;
-		usleep(3000);
 	} else {
 		run = 1;
 	}
@@ -2255,6 +2254,8 @@ int main(int argc, char** argv) {
 	buffers_to_isp_op(&yuv_cb);
 
 	start_camera_streaming(sensor, sensor_mode);
+
+	gpio_toggle();
     
 	encoding = dev.rawcam_output->format->encoding;
 	int stride = mmal_encoding_width_to_stride(encoding, dev.rawcam_output->format->es->video.width);
