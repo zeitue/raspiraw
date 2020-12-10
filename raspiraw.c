@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <wiringPi.h>
 
 
@@ -324,6 +325,7 @@ void gpio_toggle()
 	if(run) {
 		digitalWrite (pin, !digitalRead (pin));
 		run = 0;
+		usleep(3000);
 	} else {
 		run = 1;
 	}
