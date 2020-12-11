@@ -320,15 +320,8 @@ typedef struct {
 
 void gpio_toggle()
 {
-	static int run = 1;
 	int pin = 4;
-	if(run) {
-		digitalWrite (pin, !digitalRead (pin));
-		run = 0;
-	} else {
-		run = 1;
-	}
-	
+	digitalWrite (pin, !digitalRead (pin));
 }
 
 
@@ -596,7 +589,6 @@ static void callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 	//vcos_log_error("Buffer %p returned, filled %d, timestamp %llu, flags %04X", buffer, buffer->length, buffer->pts, buffer->flags);
 	if (cfg->capture)
 	{
-		gpio_toggle();
 
 		if (!(buffer->flags&MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) &&
                     (((count++)%cfg->saverate)==0))
@@ -671,6 +663,7 @@ static void callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
 		/* Pass to the processing thread */
 		if (dev->processing_queue)
 		{
+			gpio_toggle();
 			/* Relying on the processing thread to release this buffer`refcount */
 			mmal_buffer_header_acquire(buffer);
 			mmal_queue_put(dev->processing_queue, buffer);
@@ -2253,10 +2246,10 @@ int main(int argc, char** argv) {
 	buffers_to_rawcam(&dev);
 	buffers_to_isp_op(&yuv_cb);
 
-	start_camera_streaming(sensor, sensor_mode);
-
 	gpio_toggle();
-    
+
+	start_camera_streaming(sensor, sensor_mode);
+ 
 	encoding = dev.rawcam_output->format->encoding;
 	int stride = mmal_encoding_width_to_stride(encoding, dev.rawcam_output->format->es->video.width);
     int bpp = encoding_to_bpp(encoding);
